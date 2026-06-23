@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSI Model Interactive Explorer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .layer-btn { transition: all 0.2s ease-in-out; }
+        .layer-btn:hover { transform: translateX(10px); }
+        .active-layer { transform: translateX(10px); filter: brightness(1.2); border-color: white; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-200 min-h-screen p-8 font-sans">
+    <div class="max-w-5xl mx-auto">
+        <div class="mb-8 text-center">
+            <h1 class="text-4xl font-extrabold text-indigo-400 mb-2">The OSI Model</h1>
+            <p class="text-slate-400">Click on each layer to understand its role, data format, and why DevOps cares about it.</p>
+        </div>
+
+        <div class="flex flex-col md:flex-row gap-8">
+            <!-- Layers Stack (Left) -->
+            <div class="flex-1 flex flex-col gap-2 relative">
+                <!-- Data Flow Arrow -->
+                <div class="absolute -left-12 top-0 bottom-0 flex flex-col justify-between text-indigo-500 font-bold text-sm items-center w-8">
+                    <span>Send</span>
+                    <div class="w-1 bg-indigo-500 h-full my-2 relative">
+                        <div class="absolute bottom-0 -left-2 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-t-[10px] border-t-indigo-500"></div>
+                        <div class="absolute top-0 -left-2 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-b-[10px] border-b-indigo-500"></div>
+                    </div>
+                    <span>Receive</span>
+                </div>
+
+                <button onclick="showLayer(7)" id="btn-7" class="layer-btn bg-purple-700 border-2 border-purple-500 p-4 rounded-lg text-left shadow-lg">
+                    <span class="font-bold text-xl text-purple-100">Layer 7: Application</span>
+                    <span class="float-right text-purple-300 font-mono text-sm mt-1">Data</span>
+                </button>
+                <button onclick="showLayer(6)" id="btn-6" class="layer-btn bg-purple-600 border-2 border-purple-400 p-4 rounded-lg text-left shadow-lg">
+                    <span class="font-bold text-xl text-purple-100">Layer 6: Presentation</span>
+                    <span class="float-right text-purple-300 font-mono text-sm mt-1">Data</span>
+                </button>
+                <button onclick="showLayer(5)" id="btn-5" class="layer-btn bg-purple-500 border-2 border-purple-300 p-4 rounded-lg text-left shadow-lg">
+                    <span class="font-bold text-xl text-purple-100">Layer 5: Session</span>
+                    <span class="float-right text-purple-200 font-mono text-sm mt-1">Data</span>
+                </button>
+                <button onclick="showLayer(4)" id="btn-4" class="layer-btn bg-blue-600 border-2 border-blue-400 p-4 rounded-lg text-left shadow-lg">
+                    <span class="font-bold text-xl text-blue-100">Layer 4: Transport</span>
+                    <span class="float-right text-blue-300 font-mono text-sm mt-1">Segments</span>
+                </button>
+                <button onclick="showLayer(3)" id="btn-3" class="layer-btn bg-teal-600 border-2 border-teal-400 p-4 rounded-lg text-left shadow-lg">
+                    <span class="font-bold text-xl text-teal-100">Layer 3: Network</span>
+                    <span class="float-right text-teal-300 font-mono text-sm mt-1">Packets</span>
+                </button>
+                <button onclick="showLayer(2)" id="btn-2" class="layer-btn bg-green-600 border-2 border-green-400 p-4 rounded-lg text-left shadow-lg">
+                    <span class="font-bold text-xl text-green-100">Layer 2: Data Link</span>
+                    <span class="float-right text-green-300 font-mono text-sm mt-1">Frames</span>
+                </button>
+                <button onclick="showLayer(1)" id="btn-1" class="layer-btn bg-emerald-700 border-2 border-emerald-500 p-4 rounded-lg text-left shadow-lg">
+                    <span class="font-bold text-xl text-emerald-100">Layer 1: Physical</span>
+                    <span class="float-right text-emerald-300 font-mono text-sm mt-1">Bits (0s & 1s)</span>
+                </button>
+            </div>
+
+            <!-- Info Panel (Right) -->
+            <div class="flex-1 bg-slate-800 border border-slate-700 rounded-xl p-8 shadow-2xl relative">
+                <div id="default-view" class="h-full flex flex-col items-center justify-center text-slate-500 text-center">
+                    <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>
+                    <p class="text-xl">Select a layer on the left to inspect it.</p>
+                </div>
+
+                <div id="info-view" class="hidden h-full flex flex-col">
+                    <div class="mb-4">
+                        <span id="layer-num" class="text-xs font-bold uppercase tracking-wider px-2 py-1 rounded bg-slate-700 text-slate-300 mb-2 block w-max">Layer X</span>
+                        <h2 id="layer-name" class="text-3xl font-bold text-white">Layer Name</h2>
+                    </div>
+                    
+                    <div class="bg-slate-900 rounded p-4 mb-4 border border-slate-700">
+                        <h3 class="text-sm text-slate-400 uppercase tracking-wide font-bold mb-1">What it does</h3>
+                        <p id="layer-desc" class="text-slate-200"></p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div class="bg-slate-900 rounded p-4 border border-slate-700">
+                            <h3 class="text-sm text-slate-400 uppercase tracking-wide font-bold mb-1">Protocols & Devices</h3>
+                            <p id="layer-protocols" class="text-indigo-300 font-mono text-sm"></p>
+                        </div>
+                        <div class="bg-slate-900 rounded p-4 border border-slate-700">
+                            <h3 class="text-sm text-slate-400 uppercase tracking-wide font-bold mb-1">Data Unit</h3>
+                            <p id="layer-pdu" class="text-emerald-400 font-mono text-lg font-bold"></p>
+                        </div>
+                    </div>
+
+                    <div class="bg-indigo-900/30 rounded p-4 border border-indigo-500/30 mt-auto">
+                        <h3 class="text-sm text-indigo-400 uppercase tracking-wide font-bold mb-1">DevOps Relevance</h3>
+                        <p id="layer-devops" class="text-indigo-100 text-sm"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const layerData = {
+            7: {
+                name: "Application",
+                desc: "The interface between the network and the application software. This is where your web browsers, APIs, and email clients operate.",
+                protocols: "HTTP, HTTPS, DNS, SMTP, SSH",
+                pdu: "Data",
+                devops: "CRITICAL. You will constantly troubleshoot HTTP status codes (404, 502, 500) and API endpoints. Load balancers (Layer 7 proxies) read this traffic to make routing decisions based on URL paths."
+            },
+            6: {
+                name: "Presentation",
+                desc: "Ensures data is in a usable format and is where data encryption/decryption occurs.",
+                protocols: "TLS/SSL, JSON, JPEG",
+                pdu: "Data",
+                devops: "Important for security. Managing SSL/TLS certificates and ensuring traffic is encrypted before it leaves the container or server."
+            },
+            5: {
+                name: "Session",
+                desc: "Maintains connections (sessions) between local and remote applications. It handles opening, closing, and managing the link.",
+                protocols: "NetBIOS, PPTP, Sockets",
+                pdu: "Data",
+                devops: "Less commonly managed directly, but important when dealing with database connections timing out or keeping persistent WebSocket connections alive."
+            },
+            4: {
+                name: "Transport",
+                desc: "Manages the delivery and error checking of data packets. It regulates the size, sequencing, and transfer of data between systems and hosts.",
+                protocols: "TCP, UDP, Port Numbers",
+                pdu: "Segments",
+                devops: "CRITICAL. You configure firewall rules (Security Groups) based on Layer 4 Ports (e.g., Allow TCP Port 443). Layer 4 Load Balancers route traffic fast without looking at the HTTP contents."
+            },
+            3: {
+                name: "Network",
+                desc: "Handles routing of data across multiple networks. It assigns logical IP addresses and finds the best path to the destination.",
+                protocols: "IPv4, IPv6, ICMP (Ping), IPSec, Routers",
+                pdu: "Packets",
+                devops: "CRITICAL. Designing Cloud VPCs, Subnets, and routing tables. If a pod in Kubernetes can't ping an external database, it's often a Layer 3 routing issue."
+            },
+            2: {
+                name: "Data Link",
+                desc: "Handles node-to-node data transfer within the same local network. Uses MAC addresses to ensure bits are delivered locally without errors.",
+                protocols: "Ethernet, Wi-Fi, MAC Addresses, Switches",
+                pdu: "Frames",
+                devops: "Mostly abstracted away by Cloud Providers. However, understanding it is useful for deep virtualization and physical datacenter setups."
+            },
+            1: {
+                name: "Physical",
+                desc: "The physical equipment involved in the data transfer, such as cables, radio waves, and raw hardware.",
+                protocols: "Fiber optics, Cat6 cables, Radio frequencies",
+                pdu: "Bits (0s & 1s)",
+                devops: "Rarely touches this layer unless racking physical servers in a bare-metal environment."
+            }
+        };
+
+        function showLayer(num) {
+            // Reset buttons
+            document.querySelectorAll('.layer-btn').forEach(btn => btn.classList.remove('active-layer', 'border-white'));
+            
+            // Activate clicked button
+            const btn = document.getElementById(`btn-${num}`);
+            btn.classList.add('active-layer', 'border-white');
+
+            // Update UI
+            document.getElementById('default-view').classList.add('hidden');
+            document.getElementById('info-view').classList.remove('hidden');
+
+            const data = layerData[num];
+            document.getElementById('layer-num').innerText = `Layer ${num}`;
+            document.getElementById('layer-name').innerText = data.name;
+            document.getElementById('layer-desc').innerText = data.desc;
+            document.getElementById('layer-protocols').innerText = data.protocols;
+            document.getElementById('layer-pdu').innerText = data.pdu;
+            document.getElementById('layer-devops').innerText = data.devops;
+        }
+    </script>
+</body>
+</html>
