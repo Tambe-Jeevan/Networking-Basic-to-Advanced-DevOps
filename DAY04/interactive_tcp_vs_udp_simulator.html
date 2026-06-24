@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TCP vs UDP Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .packet { transition: left 1s linear, opacity 0.3s; }
+        .fast-packet { transition: left 0.4s linear, opacity 0.3s; }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen p-8 font-sans">
+    <div class="max-w-5xl mx-auto">
+        <div class="mb-8 text-center">
+            <h1 class="text-3xl font-bold text-blue-400 mb-2">Transport Layer: TCP vs UDP</h1>
+            <p class="text-gray-400">Observe how TCP guarantees delivery with acknowledgements, while UDP prioritizes pure speed.</p>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-8">
+            
+            <!-- TCP Section -->
+            <div class="bg-gray-800 rounded-xl p-6 border-t-4 border-blue-500 shadow-lg flex flex-col">
+                <h2 class="text-xl font-bold text-blue-400 mb-2">TCP (Reliable)</h2>
+                <p class="text-xs text-gray-400 mb-4 h-8">Certified Mail: Requires a handshake, sends data, and waits for a receipt (ACK). Slow but 100% reliable.</p>
+                
+                <div class="relative w-full h-32 bg-gray-900 rounded border border-gray-700 mb-4 overflow-hidden" id="tcp-track">
+                    <!-- Nodes -->
+                    <div class="absolute left-2 top-1/2 -translate-y-1/2 w-12 h-12 bg-blue-600 rounded flex items-center justify-center text-xs font-bold z-10">Client</div>
+                    <div class="absolute right-2 top-1/2 -translate-y-1/2 w-12 h-12 bg-gray-600 rounded flex items-center justify-center text-xs font-bold z-10">Server</div>
+                </div>
+
+                <div class="bg-black text-blue-300 font-mono text-[10px] p-2 rounded h-32 overflow-y-auto mb-4" id="tcp-log">
+                    > TCP Socket Ready...
+                </div>
+                
+                <button id="btn-tcp" class="mt-auto bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded transition active:scale-95">
+                    Start TCP Transfer
+                </button>
+            </div>
+
+            <!-- UDP Section -->
+            <div class="bg-gray-800 rounded-xl p-6 border-t-4 border-orange-500 shadow-lg flex flex-col">
+                <h2 class="text-xl font-bold text-orange-400 mb-2">UDP (Fast)</h2>
+                <p class="text-xs text-gray-400 mb-4 h-8">T-Shirt Cannon: No handshake, no receipts. Just blasts data as fast as possible. Fast but packets can drop.</p>
+                
+                <div class="relative w-full h-32 bg-gray-900 rounded border border-gray-700 mb-4 overflow-hidden" id="udp-track">
+                    <!-- Nodes -->
+                    <div class="absolute left-2 top-1/2 -translate-y-1/2 w-12 h-12 bg-orange-600 rounded flex items-center justify-center text-xs font-bold z-10">Client</div>
+                    <div class="absolute right-2 top-1/2 -translate-y-1/2 w-12 h-12 bg-gray-600 rounded flex items-center justify-center text-xs font-bold z-10">Server</div>
+                </div>
+
+                <div class="bg-black text-orange-300 font-mono text-[10px] p-2 rounded h-32 overflow-y-auto mb-4" id="udp-log">
+                    > UDP Socket Ready...
+                </div>
+
+                <button id="btn-udp" class="mt-auto bg-orange-600 hover:bg-orange-500 text-white font-bold py-2 px-4 rounded transition active:scale-95">
+                    Start UDP Transfer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function log(elementId, msg) {
+            const el = document.getElementById(elementId);
+            el.innerHTML += `<br>> ${msg}`;
+            el.scrollTop = el.scrollHeight;
+        }
+
+        async function createPacket(trackId, label, isReturn, cssClass, drop = false) {
+            return new Promise(resolve => {
+                const track = document.getElementById(trackId);
+                const packet = document.createElement('div');
+                packet.className = `absolute top-1/2 -translate-y-1/2 h-6 px-2 rounded flex items-center justify-center text-[9px] font-bold text-white z-0 ${cssClass}`;
+                packet.innerText = label;
+                
+                // Set starting position
+                if (isReturn) {
+                    packet.style.left = 'calc(100% - 60px)';
+                } else {
+                    packet.style.left = '60px';
+                }
+                
+                track.appendChild(packet);
+
+                // Trigger reflow
+                packet.getBoundingClientRect();
+
+                // Move packet
+                if (isReturn) {
+                    packet.style.left = '60px';
+                } else {
+                    // if drop is true, stop in the middle and fade out
+                    packet.style.left = drop ? '50%' : 'calc(100% - 60px)';
+                }
+
+                setTimeout(() => {
+                    if (drop) {
+                        packet.style.opacity = '0';
+                        setTimeout(() => { packet.remove(); resolve(false); }, 300);
+                    } else {
+                        packet.remove();
+                        resolve(true);
+                    }
+                }, cssClass.includes('fast-packet') ? 400 : 1000);
+            });
+        }
+
+        // TCP Logic
+        document.getElementById('btn-tcp').addEventListener('click', async function() {
+            this.disabled = true;
+            this.classList.add('opacity-50');
+            const l = 'tcp-log';
+            const t = 'tcp-track';
+            document.getElementById(l).innerHTML = '> TCP Socket Ready...';
+
+            // 3-Way Handshake
+            log(l, 'Initiating 3-Way Handshake...');
+            log(l, 'Client: [SYN]');
+            await createPacket(t, 'SYN', false, 'bg-blue-500 packet');
+            log(l, 'Server: [SYN-ACK]');
+            await createPacket(t, 'SYN-ACK', true, 'bg-blue-400 packet');
+            log(l, 'Client: [ACK]');
+            await createPacket(t, 'ACK', false, 'bg-blue-500 packet');
+            log(l, 'Connection ESTABLISHED.');
+
+            // Data transfer
+            for(let i=1; i<=3; i++) {
+                log(l, `Sending Data Chunk ${i}...`);
+                await createPacket(t, `Data ${i}`, false, 'bg-green-500 packet');
+                log(l, `Waiting for ACK ${i}...`);
+                await createPacket(t, `ACK ${i}`, true, 'bg-teal-500 packet');
+                log(l, `ACK ${i} received.`);
+            }
+            
+            log(l, 'Transfer Complete. Closing connection safely.');
+            this.disabled = false;
+            this.classList.remove('opacity-50');
+        });
+
+        // UDP Logic
+        document.getElementById('btn-udp').addEventListener('click', async function() {
+            this.disabled = true;
+            this.classList.add('opacity-50');
+            const l = 'udp-log';
+            const t = 'udp-track';
+            document.getElementById(l).innerHTML = '> UDP Socket Ready...';
+
+            log(l, 'NO Handshake. Blasting data immediately...');
+
+            // Rapid fire packets
+            for(let i=1; i<=6; i++) {
+                log(l, `Sending Datagram ${i}`);
+                // Simulate packet 4 dropping
+                let drop = (i === 4); 
+                createPacket(t, `D-gram ${i}`, false, 'bg-orange-500 fast-packet', drop);
+                await new Promise(r => setTimeout(r, 150)); // Tiny delay between shots
+                
+                if(drop) {
+                    setTimeout(() => log(l, `<span class="text-red-400">Datagram 4 Dropped in transit! (Ignored)</span>`), 400);
+                }
+            }
+
+            setTimeout(() => {
+                log(l, 'Finished sending. Server never replies. We hope it arrived.');
+                this.disabled = false;
+                this.classList.remove('opacity-50');
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
