@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Public vs Private IP Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen p-8 font-sans">
+    <div class="max-w-6xl mx-auto">
+        <div class="mb-8 text-center">
+            <h1 class="text-3xl font-bold text-blue-400 mb-2">Public vs Private IP Architecture</h1>
+            <p class="text-gray-400">Click "Send Packet" to see how NAT (Network Address Translation) translates Private IPs into a single Public IP.</p>
+        </div>
+
+        <div class="flex flex-col lg:flex-row gap-8 items-center justify-center">
+            
+            <!-- Private Network (LAN) -->
+            <div class="flex-1 bg-gray-800 p-6 rounded-xl border-2 border-dashed border-gray-600 relative w-full lg:w-auto">
+                <div class="absolute -top-3 left-4 bg-gray-900 px-2 text-sm text-gray-400 font-bold">Your Private LAN (Home/VPC)</div>
+                <div class="flex flex-col gap-6 mt-4">
+                    
+                    <!-- Device 1 -->
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-16 bg-blue-900 rounded-lg flex items-center justify-center border border-blue-500 shadow-lg relative">
+                            <svg class="w-8 h-8 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                            <div id="packet-origin-1" class="absolute w-4 h-4 bg-yellow-400 rounded-full opacity-0 z-20 top-1/2 -translate-y-1/2 left-full ml-2"></div>
+                        </div>
+                        <div>
+                            <div class="font-bold">Developer Laptop</div>
+                            <div class="text-blue-400 font-mono text-sm bg-gray-900 px-2 py-1 rounded mt-1 inline-block border border-gray-700">Private IP: 192.168.1.10</div>
+                        </div>
+                        <button onclick="sendPacket(1, '192.168.1.10')" class="ml-auto bg-blue-600 hover:bg-blue-500 text-xs px-3 py-2 rounded font-bold transition">Send Packet</button>
+                    </div>
+
+                    <!-- Device 2 -->
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-16 bg-green-900 rounded-lg flex items-center justify-center border border-green-500 shadow-lg relative">
+                            <svg class="w-8 h-8 text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                            <div id="packet-origin-2" class="absolute w-4 h-4 bg-yellow-400 rounded-full opacity-0 z-20 top-1/2 -translate-y-1/2 left-full ml-2"></div>
+                        </div>
+                        <div>
+                            <div class="font-bold">Mobile Phone</div>
+                            <div class="text-green-400 font-mono text-sm bg-gray-900 px-2 py-1 rounded mt-1 inline-block border border-gray-700">Private IP: 192.168.1.11</div>
+                        </div>
+                        <button onclick="sendPacket(2, '192.168.1.11')" class="ml-auto bg-green-600 hover:bg-green-500 text-xs px-3 py-2 rounded font-bold transition">Send Packet</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NAT Router -->
+            <div class="flex flex-col items-center relative z-10 w-full lg:w-auto my-8 lg:my-0">
+                <div class="w-1 h-12 lg:w-16 lg:h-1 bg-gray-600 lg:hidden"></div>
+                <div class="w-32 h-32 bg-purple-900 rounded-full flex flex-col items-center justify-center border-4 border-purple-500 shadow-2xl relative z-10">
+                    <span class="font-bold text-lg">Router (NAT)</span>
+                    <span class="text-[10px] text-purple-200 mt-1">Network Address Translation</span>
+                    <div id="router-node" class="absolute w-4 h-4 bg-yellow-400 rounded-full opacity-0 z-20 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></div>
+                </div>
+                <div class="bg-gray-800 p-2 rounded border border-gray-600 mt-4 text-center">
+                    <div class="text-xs text-gray-400 uppercase tracking-widest">Public IP (Facing Internet)</div>
+                    <div class="text-purple-400 font-mono font-bold text-lg">203.0.113.45</div>
+                </div>
+            </div>
+
+            <!-- Public Internet (WAN) -->
+            <div class="flex-1 bg-blue-950/50 p-6 rounded-xl border border-blue-500/30 relative w-full lg:w-auto h-64 flex items-center justify-center">
+                <div class="absolute -top-3 left-4 bg-gray-900 px-2 text-sm text-blue-300 font-bold">Public Internet (WAN)</div>
+                
+                <div class="text-center relative">
+                    <div class="w-24 h-24 bg-gray-200 rounded-full mx-auto flex items-center justify-center border-4 border-white shadow-[0_0_30px_rgba(255,255,255,0.2)]">
+                        <svg class="w-12 h-12 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+                        <div id="internet-node" class="absolute w-4 h-4 bg-yellow-400 rounded-full opacity-0 z-20 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></div>
+                    </div>
+                    <div class="font-bold text-xl mt-4 text-white">Google.com</div>
+                    <div class="text-gray-300 font-mono text-sm">Public IP: 142.250.190.46</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Terminal Log -->
+        <div class="mt-8 bg-black rounded-lg p-4 font-mono text-sm h-48 overflow-y-auto border border-gray-700" id="terminal-log">
+            <div class="text-green-400">> Network Architecture loaded. Awaiting traffic...</div>
+        </div>
+    </div>
+
+    <script>
+        const terminalLog = document.getElementById('terminal-log');
+        let isAnimating = false;
+
+        function logToTerminal(message, type = 'info') {
+            const div = document.createElement('div');
+            let color = 'text-gray-300';
+            if (type === 'private') color = 'text-blue-400';
+            if (type === 'nat') color = 'text-purple-400';
+            if (type === 'public') color = 'text-white';
+            if (type === 'success') color = 'text-green-400';
+            
+            div.className = `mt-1 ${color}`;
+            div.innerHTML = `> ${message}`;
+            terminalLog.appendChild(div);
+            terminalLog.scrollTop = terminalLog.scrollHeight;
+        }
+
+        async function sendPacket(deviceId, sourceIp) {
+            if (isAnimating) return;
+            isAnimating = true;
+            terminalLog.innerHTML = '';
+            
+            logToTerminal(`[${sourceIp}] creating packet for Destination: 142.250.190.46 (Google)`, 'private');
+            
+            const originId = `packet-origin-${deviceId}`;
+            const originNode = document.getElementById(originId);
+            const routerNode = document.getElementById('router-node');
+            const internetNode = document.getElementById('internet-node');
+
+            // 1. Show at origin
+            originNode.style.opacity = '1';
+            originNode.style.transition = 'none';
+            await new Promise(r => setTimeout(r, 500));
+
+            // 2. Move to Router
+            const originRect = originNode.getBoundingClientRect();
+            const routerRect = routerNode.parentElement.getBoundingClientRect();
+            
+            const deltaX1 = routerRect.left + (routerRect.width/2) - originRect.left - 8;
+            const deltaY1 = routerRect.top + (routerRect.height/2) - originRect.top - 8;
+
+            originNode.style.transition = 'transform 0.8s ease-in-out';
+            originNode.style.transform = `translate(${deltaX1}px, ${deltaY1}px)`;
+            
+            await new Promise(r => setTimeout(r, 800));
+            logToTerminal(`Packet reached NAT Router.`, 'info');
+            logToTerminal(`NAT Process: Translating Source IP [${sourceIp}] ---> [203.0.113.45]`, 'nat');
+            
+            // 3. Reset origin dot, show router dot
+            originNode.style.opacity = '0';
+            originNode.style.transform = 'translate(0,0)';
+            routerNode.style.opacity = '1';
+            routerNode.style.transition = 'none';
+            routerNode.style.transform = 'translate(0,0)';
+            
+            await new Promise(r => setTimeout(r, 800));
+
+            // 4. Move to Internet
+            const routerDotRect = routerNode.getBoundingClientRect();
+            const internetRect = internetNode.parentElement.getBoundingClientRect();
+            
+            const deltaX2 = internetRect.left + (internetRect.width/2) - routerDotRect.left - 8;
+            const deltaY2 = internetRect.top + (internetRect.height/2) - routerDotRect.top - 8;
+
+            logToTerminal(`Packet leaving network with Public Source IP: 203.0.113.45`, 'public');
+            routerNode.style.transition = 'transform 1s ease-in-out';
+            routerNode.style.transform = `translate(${deltaX2}px, ${deltaY2}px)`;
+
+            await new Promise(r => setTimeout(r, 1000));
+            
+            logToTerminal(`Packet successfully delivered to Google.com!`, 'success');
+            
+            // Clean up
+            routerNode.style.opacity = '0';
+            routerNode.style.transform = 'translate(0,0)';
+            isAnimating = false;
+        }
+    </script>
+</body>
+</html>
